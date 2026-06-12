@@ -1,9 +1,11 @@
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import pickle
-import gzip  # 🔥 HI NAVIN LINE ADD KAR
+import gzip
+import re    # 🔥 HI NAVIN LINE ADD KAR
 import whois
 import urllib.parse
+# ... baki imports
 # ... (baki tuze imports)
 from datetime import datetime
 

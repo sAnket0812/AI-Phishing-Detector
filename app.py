@@ -65,7 +65,7 @@ def check():
         return render_template('index.html', result="🟢 SAFE LINK", warning="", stats=session_stats)
 
 # --- SPRINT 3: NEW CHROME EXTENSION API ---
-@app.route('/api/scan', methods=['POST'])
+@app.route('/api/scan', methods=['POST', 'OPTIONS'])
 def api_scan():
     # The extension will send data in JSON format
     data = request.get_json()

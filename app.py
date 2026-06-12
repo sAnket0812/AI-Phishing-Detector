@@ -67,25 +67,34 @@ def check():
         return render_template('index.html', result="🟢 SAFE LINK", warning="", stats=session_stats)
 
 # --- SPRINT 3: NEW CHROME EXTENSION API ---
-@app.route('/api/scan', methods=['POST'])
+@app.route('/api/scan', methods=['POST', 'OPTIONS'])
 def api_scan():
-    # The extension will send data in JSON format
-    data = request.get_json()
-    user_link = data.get('url')
-    
-    test_clues = [[len(user_link), 1 if '@' in user_link else 0, user_link.count('.'), 1 if re.search(r'\d+\.\d+\.\d+\.\d+', user_link) else 0, user_link.count('-'), scan_words(user_link)]]
-    prediction = model.predict(test_clues)
-    domain_age_days = check_domain_age(user_link)
-    
-    is_phishing = False
-    if prediction[0] == 1 or domain_age_days < 30:
-        is_phishing = True
-        
-    # Return pure data, no HTML!
-    return jsonify({
-        "url": user_link,
-        "is_phishing": is_phishing
-    })
+    # 1. CORS Preflight Security
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200
 
+    data = request.get_json()
+    user_link = str(data.get('url')).lower()
+
+    # --- 2. MACHINE LEARNING BRAIN ---
+    # (Tuza aadhicha code tasach)
+    test_clues = [[len(user_link), 1 if '@' in user_link else 0, user_link.count('-'), 1 if re.search(r'\d+\.\d+\.\d+\.\d+', user_link) else 0, user_link.count('.'), scan_words(user_link)]]
+    prediction = model.predict(test_clues)[0]
+
+    # --- 3. EXTREME LEVEL OVERRIDE (The Boss Logic) ---
+    # Rule A: Jar link madhe IP Address kiva '@' symbol asel, tar direct 100% Phishing!
+    if re.search(r'\d+\.\d+\.\d+\.\d+', user_link) or '@' in user_link:
+        prediction = 1
+        
+    # Rule B: Strict Danger Word Checking
+    bad_words_found = scan_words(user_link)
+    if bad_words_found >= 1:
+        # Tuzi swatachi Trusted Websites chi 'White-list' (He words astil tar ignore kar)
+        trusted_sites = ['google.com', 'amazon.in', 'github.com', 'render.com']
+        if not any(trusted in user_link for trusted in trusted_sites):
+            prediction = 1 # Fake link pakadli!
+
+    # Return the final extreme result
+    return jsonify({'is_phishing': bool(prediction == 1)})
 if __name__ == '__main__':
     app.run(debug=True)
